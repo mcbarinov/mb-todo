@@ -1,15 +1,13 @@
 """Add a new todo."""
 
-import json
 import logging
-import time
 from typing import Annotated
 
 import typer
 
 from mb_todo.app_context import use_context
 from mb_todo.db import Priority
-from mb_todo.utils import normalize_tags
+from mb_todo.errors import AppError
 
 logger = logging.getLogger(__name__)
 
@@ -25,32 +23,9 @@ def add(
 ) -> None:
     """Create a new todo."""
     app = use_context(ctx)
-
-    # Validate title
-    title = title.strip()
-    if not title:
-        app.out.print_error_and_exit("VALIDATION_ERROR", "Title must not be empty.")
-
-    # Resolve project (supports partial matching)
-    if project is not None:
-        project = project.strip()
-        if not project:
-            app.out.print_error_and_exit("VALIDATION_ERROR", "Project name must not be empty.")
-        project = app.resolve_project(project)
-
-    # Normalize tags
-    tags = normalize_tags(tag) if tag else []
-
-    now = int(time.time())
-    todo_id = app.db.insert_todo(
-        title=title,
-        body=body,
-        priority=priority,
-        project=project,
-        tags=json.dumps(tags),
-        created_at=now,
-        updated_at=now,
-    )
-
-    app.out.print_todo_added(todo_id, title)
-    logger.info("Todo added id=%d title=%r", todo_id, title)
+    try:
+        todo_id, clean_title = app.service.add_todo(title=title, body=body, priority=priority, project=project, tags=tag)
+    except AppError as e:
+        app.out.print_error_and_exit(e.code, e.message)
+    app.out.print_todo_added(todo_id, clean_title)
+    logger.info("Todo added id=%d title=%r", todo_id, clean_title)

@@ -6,6 +6,7 @@ import typer
 
 from mb_todo.app_context import use_context
 from mb_todo.db import Priority, SortOrder
+from mb_todo.errors import AppError
 
 
 def list_(
@@ -22,23 +23,6 @@ def list_(
     """List todos. By default shows only open todos."""
     app = use_context(ctx)
 
-    # Validate limit
-    if limit is not None and limit < 1:
-        app.out.print_error_and_exit("VALIDATION_ERROR", "Limit must be a positive integer.")
-
-    # Resolve project (supports partial matching)
-    if project is not None:
-        project = project.strip()
-        if not project:
-            app.out.print_error_and_exit("VALIDATION_ERROR", "Project name must not be empty.")
-        project = app.resolve_project(project)
-
-    # Validate tag
-    if tag is not None:
-        tag = tag.strip()
-        if not tag:
-            app.out.print_error_and_exit("VALIDATION_ERROR", "Tag must not be empty.")
-
     # Determine closed filter: None = all, True = closed only, False = open only
     closed_filter: bool | None
     if all_:
@@ -48,5 +32,8 @@ def list_(
     else:
         closed_filter = False
 
-    todos = app.db.fetch_todos(closed=closed_filter, project=project, priority=priority, tag=tag, sort=sort, limit=limit)
+    try:
+        todos = app.service.list_todos(closed=closed_filter, project=project, priority=priority, tag=tag, sort=sort, limit=limit)
+    except AppError as e:
+        app.out.print_error_and_exit(e.code, e.message)
     app.out.print_todos(todos)

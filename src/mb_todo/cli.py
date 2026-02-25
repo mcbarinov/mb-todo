@@ -20,6 +20,7 @@ from mb_todo.config import Config
 from mb_todo.db import Db
 from mb_todo.log import setup_logging
 from mb_todo.output import Output
+from mb_todo.service import TodoService
 
 app = TyperPlus(package_name="mb-todo")
 
@@ -46,7 +47,8 @@ def main(
     setup_logging(cfg.log_path)
     db = Db(cfg.db_path)
     ctx.call_on_close(db.close)
-    ctx.obj = AppContext(out=Output(json_mode=json_output), db=db, cfg=cfg)
+    service = TodoService(db)
+    ctx.obj = AppContext(out=Output(json_mode=json_output), service=service, cfg=cfg)
 
 
 app.command(aliases=["a"])(add)

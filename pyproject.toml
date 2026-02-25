@@ -1,6 +1,6 @@
 [project]
 name = "mb-todo"
-version = "0.0.1"
+version = "0.0.2"
 description = "CLI-first todo manager with local SQLite storage"
 readme = "README.md"
 license = "MIT"
@@ -33,7 +33,7 @@ dev = [
     "pytest-xdist~=3.8.0",
     "ruff~=0.15.2",
     "pip-audit~=2.10.0",
-    "bandit~=1.9.3",
+    "bandit~=1.9.4",
     "mypy~=1.19.1",
 ]
 
