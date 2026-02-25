@@ -31,13 +31,12 @@ def add(
     if not title:
         app.out.print_error_and_exit("VALIDATION_ERROR", "Title must not be empty.")
 
-    # Validate project exists
+    # Resolve project (supports partial matching)
     if project is not None:
         project = project.strip()
         if not project:
             app.out.print_error_and_exit("VALIDATION_ERROR", "Project name must not be empty.")
-        if not app.db.project_exists(project):
-            app.out.print_error_and_exit("PROJECT_NOT_FOUND", f"Project '{project}' does not exist.")
+        project = app.resolve_project(project)
 
     # Normalize tags
     tags = normalize_tags(tag) if tag else []

@@ -157,6 +157,7 @@ All `--json` output uses a consistent envelope (matches mb-pomodoro):
 | `ALREADY_CLOSED` | Todo is already closed |
 | `ALREADY_OPEN` | Todo is already open |
 | `PROJECT_NOT_FOUND` | Project name does not exist |
+| `AMBIGUOUS_PROJECT` | Partial project name matches multiple projects |
 | `PROJECT_EXISTS` | Project name already taken |
 | `PROJECT_HAS_TODOS` | Cannot delete project with assigned todos |
 | `INVALID_PRIORITY` | Priority value not in (low, medium, high) |

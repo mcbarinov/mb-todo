@@ -126,11 +126,6 @@ class Db:
         rows = self._conn.execute("SELECT name FROM projects ORDER BY name").fetchall()
         return [row[0] for row in rows]
 
-    def project_exists(self, name: str) -> bool:
-        """Check whether a project with the given name exists."""
-        row = self._conn.execute("SELECT 1 FROM projects WHERE name = ?", (name,)).fetchone()
-        return row is not None
-
     # --- Todos ---
 
     def insert_todo(

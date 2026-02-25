@@ -26,13 +26,12 @@ def list_(
     if limit is not None and limit < 1:
         app.out.print_error_and_exit("VALIDATION_ERROR", "Limit must be a positive integer.")
 
-    # Validate project exists
+    # Resolve project (supports partial matching)
     if project is not None:
         project = project.strip()
         if not project:
             app.out.print_error_and_exit("VALIDATION_ERROR", "Project name must not be empty.")
-        if not app.db.project_exists(project):
-            app.out.print_error_and_exit("PROJECT_NOT_FOUND", f"Project '{project}' does not exist.")
+        project = app.resolve_project(project)
 
     # Validate tag
     if tag is not None:

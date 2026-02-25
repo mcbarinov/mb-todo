@@ -49,16 +49,11 @@ def edit(
         if not title:
             app.out.print_error_and_exit("VALIDATION_ERROR", "Title must not be empty.")
 
-    # Validate and prepare project
+    # Resolve project (supports partial matching; empty string unsets)
     db_project: object = _UNSET
     if project is not None:
         project = project.strip()
-        if project == "":
-            db_project = None  # unset project
-        else:
-            if not app.db.project_exists(project):
-                app.out.print_error_and_exit("PROJECT_NOT_FOUND", f"Project '{project}' does not exist.")
-            db_project = project
+        db_project = None if project == "" else app.resolve_project(project)
 
     # Compute tags
     final_tags = compute_tags(todo, tag=tag, add_tag=add_tag, remove_tag=remove_tag)

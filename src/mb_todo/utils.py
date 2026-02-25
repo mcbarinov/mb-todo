@@ -34,6 +34,17 @@ def compute_tags(
     return None
 
 
+def match_projects(query: str, projects: list[str]) -> list[str]:
+    """Find projects matching a partial name (case-insensitive substring).
+
+    Exact match (case-sensitive) takes priority and returns immediately.
+    """
+    if query in projects:
+        return [query]
+    query_lower = query.lower()
+    return [p for p in projects if query_lower in p.lower()]
+
+
 def format_timestamp(ts: int) -> str:
     """Convert a unix timestamp to local human-readable datetime string."""
     return datetime.fromtimestamp(ts, tz=UTC).astimezone().strftime("%Y-%m-%d %H:%M:%S")
