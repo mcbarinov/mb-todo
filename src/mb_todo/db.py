@@ -10,7 +10,7 @@ from typing import Literal
 
 logger = logging.getLogger(__name__)
 
-_UNSET = object()
+UNSET = object()
 """Sentinel to distinguish 'not provided' from None for nullable fields."""
 
 Priority = Literal["low", "medium", "high"]
@@ -243,9 +243,9 @@ class Db:
         *,
         updated_at: int,
         title: str | None = None,
-        body: object = _UNSET,
+        body: object = UNSET,
         priority: Priority | None = None,
-        project: object = _UNSET,
+        project: object = UNSET,
         tags: str | None = None,
     ) -> None:
         """Update a todo's fields dynamically. Only provided fields are changed.
@@ -254,9 +254,9 @@ class Db:
             todo_id: ID of the todo to update.
             updated_at: New updated_at timestamp (always set).
             title: New title (None = not changing).
-            body: New body (_UNSET = not changing, None = clear body).
+            body: New body (UNSET = not changing, None = clear body).
             priority: New priority (None = not changing).
-            project: New project (_UNSET = not changing, None = unset project).
+            project: New project (UNSET = not changing, None = unset project).
             tags: New tags as JSON string (None = not changing).
 
         """
@@ -266,13 +266,13 @@ class Db:
         if title is not None:
             clauses.append("title = ?")
             params.append(title)
-        if body is not _UNSET:
+        if body is not UNSET:
             clauses.append("body = ?")
             params.append(body)
         if priority is not None:
             clauses.append("priority = ?")
             params.append(priority)
-        if project is not _UNSET:
+        if project is not UNSET:
             clauses.append("project = ?")
             params.append(project)
         if tags is not None:

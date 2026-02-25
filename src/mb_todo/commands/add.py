@@ -24,7 +24,7 @@ def add(
     """Create a new todo."""
     app = use_context(ctx)
     try:
-        todo_id, clean_title = app.service.add_todo(title=title, body=body, priority=priority, project=project, tags=tag)
+        todo_id, clean_title = app.service.add_todo(title=title, body=body, priority=priority, project_query=project, tags=tag)
     except AppError as e:
         app.out.print_error_and_exit(e.code, e.message)
     app.out.print_todo_added(todo_id, clean_title)

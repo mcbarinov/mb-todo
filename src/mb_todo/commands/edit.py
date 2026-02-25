@@ -32,7 +32,7 @@ def edit(
             title=title,
             body=body,
             priority=priority,
-            project=project,
+            project_query=project,
             tag=tag,
             add_tag=add_tag,
             remove_tag=remove_tag,

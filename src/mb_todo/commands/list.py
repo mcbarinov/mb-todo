@@ -33,7 +33,14 @@ def list_(
         closed_filter = False
 
     try:
-        todos = app.service.list_todos(closed=closed_filter, project=project, priority=priority, tag=tag, sort=sort, limit=limit)
+        todos = app.service.list_todos(
+            closed=closed_filter,
+            project_query=project,
+            priority=priority,
+            tag=tag,
+            sort=sort,
+            limit=limit,
+        )
     except AppError as e:
         app.out.print_error_and_exit(e.code, e.message)
     app.out.print_todos(todos)

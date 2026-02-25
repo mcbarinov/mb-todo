@@ -3,7 +3,7 @@
 import json
 import time
 
-from mb_todo.db import _UNSET, Db, Priority, SortOrder, TodoRow
+from mb_todo.db import UNSET, Db, Priority, SortOrder, TodoRow
 from mb_todo.errors import AppError
 from mb_todo.utils import compute_tags, match_projects, normalize_tags
 
@@ -28,20 +28,18 @@ class TodoService:
         title: str,
         body: str | None,
         priority: Priority,
-        project: str | None,
+        project_query: str | None,
         tags: list[str] | None,
     ) -> tuple[int, str]:
         """Create a new todo. Returns (id, title).
 
-        Validates title non-empty, resolves project, normalizes tags.
+        Validates title non-empty, resolves project query, normalizes tags.
         """
         title = title.strip()
         if not title:
             raise AppError("VALIDATION_ERROR", "Title must not be empty.")
 
-        if project is not None:
-            project = self._validate_project_query(project)
-            project = self.resolve_project(project)
+        project = self.resolve_project(project_query) if project_query is not None else None
 
         final_tags = normalize_tags(tags) if tags else []
         now = int(time.time())
@@ -61,7 +59,7 @@ class TodoService:
         self,
         *,
         closed: bool | None,
-        project: str | None,
+        project_query: str | None,
         priority: Priority | None,
         tag: str | None,
         sort: SortOrder,
@@ -71,9 +69,7 @@ class TodoService:
         if limit is not None and limit < 1:
             raise AppError("VALIDATION_ERROR", "Limit must be a positive integer.")
 
-        if project is not None:
-            project = self._validate_project_query(project)
-            project = self.resolve_project(project)
+        project = self.resolve_project(project_query) if project_query is not None else None
 
         if tag is not None:
             tag = tag.strip()
@@ -96,14 +92,14 @@ class TodoService:
         title: str | None,
         body: str | None,
         priority: Priority | None,
-        project: str | None,
+        project_query: str | None,
         tag: list[str] | None,
         add_tag: list[str] | None,
         remove_tag: list[str] | None,
     ) -> None:
-        """Edit a todo. Validates inputs, resolves project, computes tags."""
+        """Edit a todo. Validates inputs, resolves project query, computes tags."""
         # Check at least one option provided
-        has_changes = any(opt is not None for opt in (title, body, priority, project, tag, add_tag, remove_tag))
+        has_changes = any(opt is not None for opt in (title, body, priority, project_query, tag, add_tag, remove_tag))
         if not has_changes:
             raise AppError("NO_CHANGES", "At least one option is required.")
 
@@ -120,10 +116,10 @@ class TodoService:
                 raise AppError("VALIDATION_ERROR", "Title must not be empty.")
 
         # Resolve project (empty string unsets)
-        db_project: object = _UNSET
-        if project is not None:
-            project = project.strip()
-            db_project = None if project == "" else self.resolve_project(project)
+        db_project: object = UNSET
+        if project_query is not None:
+            project_query = project_query.strip()
+            db_project = None if project_query == "" else self.resolve_project(project_query)
 
         # Compute tags
         final_tags = compute_tags(todo, tag=tag, add_tag=add_tag, remove_tag=remove_tag)
@@ -133,7 +129,7 @@ class TodoService:
             todo_id,
             updated_at=now,
             title=title,
-            body=body if body is not None else _UNSET,
+            body=body if body is not None else UNSET,
             priority=priority,
             project=db_project,
             tags=json.dumps(final_tags) if final_tags is not None else None,
@@ -156,7 +152,8 @@ class TodoService:
         self._db.reopen_todo(todo_id, updated_at=now)
 
     def delete_todo(self, todo_id: int) -> None:
-        """Delete a todo by ID (no existence check — caller does it)."""
+        """Delete a todo by ID. Raises AppError if not found."""
+        self.get_todo(todo_id)
         self._db.delete_todo(todo_id)
 
     # --- Project ---
@@ -174,22 +171,16 @@ class TodoService:
         return self._db.fetch_projects()
 
     def resolve_project(self, query: str) -> str:
-        """Resolve a partial project name to an exact match.
+        """Resolve a partial project name (case-insensitive substring) to an exact match.
 
-        Raises AppError if no match or ambiguous.
+        Raises AppError if query empty, no match, or ambiguous.
         """
+        query = query.strip()
+        if not query:
+            raise AppError("VALIDATION_ERROR", "Project name must not be empty.")
         matches = match_projects(query, self._db.fetch_projects())
         if len(matches) == 1:
             return matches[0]
         if not matches:
             raise AppError("PROJECT_NOT_FOUND", f"No project matching '{query}'.")
         raise AppError("AMBIGUOUS_PROJECT", f"'{query}' matches multiple projects: {', '.join(matches)}.")
-
-    # --- Internal helpers ---
-
-    def _validate_project_query(self, project: str) -> str:
-        """Strip and validate a project query string is non-empty."""
-        project = project.strip()
-        if not project:
-            raise AppError("VALIDATION_ERROR", "Project name must not be empty.")
-        return project
