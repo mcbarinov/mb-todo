@@ -26,5 +26,5 @@ def delete(
     if not yes and not app.out.json_mode:
         typer.confirm(f"Delete todo #{todo_id} '{todo.title}'?", abort=True)
     app.service.delete_todo(todo_id)
-    app.out.print_todo_deleted(todo_id)
+    app.out.print_todo_deleted(todo_id, todo.title)
     logger.info("Todo deleted id=%d", todo_id)

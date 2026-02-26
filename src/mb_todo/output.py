@@ -124,17 +124,17 @@ class Output:
         """Print success message for todo edit."""
         self._success({"id": todo_id}, f"Todo #{todo_id} updated.")
 
-    def print_todo_deleted(self, todo_id: int) -> None:
+    def print_todo_deleted(self, todo_id: int, title: str) -> None:
         """Print success message for todo deletion."""
-        self._success({"id": todo_id}, f"Todo #{todo_id} deleted.")
+        self._success({"id": todo_id, "title": title}, f"Deleted #{todo_id}: {title}")
 
-    def print_todo_closed(self, todo_id: int) -> None:
+    def print_todo_closed(self, todo_id: int, title: str) -> None:
         """Print success message for todo close."""
-        self._success({"id": todo_id}, f"Todo #{todo_id} closed.")
+        self._success({"id": todo_id, "title": title}, f"Closed #{todo_id}: {title}")
 
-    def print_todo_reopened(self, todo_id: int) -> None:
+    def print_todo_reopened(self, todo_id: int, title: str) -> None:
         """Print success message for todo reopen."""
-        self._success({"id": todo_id}, f"Todo #{todo_id} reopened.")
+        self._success({"id": todo_id, "title": title}, f"Reopened #{todo_id}: {title}")
 
     def print_error_and_exit(self, code: str, message: str) -> NoReturn:
         """Print an error in JSON or human-readable format and exit with code 1."""

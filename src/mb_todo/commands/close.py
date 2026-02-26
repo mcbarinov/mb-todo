@@ -18,8 +18,9 @@ def close(
     """Close a todo."""
     app = use_context(ctx)
     try:
+        todo = app.service.get_todo(todo_id)
         app.service.close_todo(todo_id)
     except AppError as e:
         app.out.print_error_and_exit(e.code, e.message)
-    app.out.print_todo_closed(todo_id)
+    app.out.print_todo_closed(todo_id, todo.title)
     logger.info("Todo closed id=%d", todo_id)
