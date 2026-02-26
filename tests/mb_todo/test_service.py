@@ -109,6 +109,73 @@ class TestAddTodo:
         assert todo.updated_at == 1000
 
 
+# --- Todo: add for projects ---
+
+
+class TestAddTodoForProjects:
+    """Test multi-project todo creation."""
+
+    def test_creates_for_each_project(self, svc: TodoService) -> None:
+        """One todo created per project."""
+        svc.add_project("Alpha")
+        svc.add_project("Beta")
+        results = svc.add_todo_for_projects(
+            title="Shared task", body=None, priority="medium", project_queries=["Alpha", "Beta"], tags=None
+        )
+        assert len(results) == 2
+        assert results[0][2] == "Alpha"
+        assert results[1][2] == "Beta"
+        assert svc.get_todo(results[0][0]).project == "Alpha"
+        assert svc.get_todo(results[1][0]).project == "Beta"
+
+    def test_partial_match(self, svc: TodoService) -> None:
+        """Project queries resolved via partial matching."""
+        svc.add_project("Backend")
+        svc.add_project("Frontend")
+        results = svc.add_todo_for_projects(
+            title="Deploy", body=None, priority="high", project_queries=["back", "front"], tags=None
+        )
+        assert len(results) == 2
+        assert results[0][2] == "Backend"
+        assert results[1][2] == "Frontend"
+
+    def test_deduplicates_resolved(self, svc: TodoService) -> None:
+        """Duplicate resolved projects create only one todo."""
+        svc.add_project("Work")
+        results = svc.add_todo_for_projects(
+            title="Task", body=None, priority="medium", project_queries=["Work", "work"], tags=None
+        )
+        assert len(results) == 1
+        assert results[0][2] == "Work"
+
+    def test_fail_fast_on_invalid_project(self, svc: TodoService) -> None:
+        """If any project query is invalid, no todos are created."""
+        svc.add_project("Alpha")
+        with pytest.raises(AppError) as exc_info:
+            svc.add_todo_for_projects(title="Task", body=None, priority="medium", project_queries=["Alpha", "nope"], tags=None)
+        assert exc_info.value.code == "PROJECT_NOT_FOUND"
+        # No todos should have been created
+        assert _list_open(svc) == []
+
+    def test_blank_title(self, svc: TodoService) -> None:
+        """Blank title raises VALIDATION_ERROR."""
+        svc.add_project("Alpha")
+        with pytest.raises(AppError) as exc_info:
+            svc.add_todo_for_projects(title="  ", body=None, priority="medium", project_queries=["Alpha"], tags=None)
+        assert exc_info.value.code == "VALIDATION_ERROR"
+
+    def test_same_timestamp(self, svc: TodoService, frozen_time: Callable[[int], None]) -> None:
+        """All todos share the same timestamp."""
+        frozen_time(5000)
+        svc.add_project("A")
+        svc.add_project("B")
+        results = svc.add_todo_for_projects(title="Task", body=None, priority="medium", project_queries=["A", "B"], tags=None)
+        for todo_id, _, _ in results:
+            todo = svc.get_todo(todo_id)
+            assert todo.created_at == 5000
+            assert todo.updated_at == 5000
+
+
 # --- Todo: get ---
 
 
@@ -211,6 +278,15 @@ class TestListTodos:
         result = svc.list_todos(closed=False, project_query=None, priority=None, tag=None, sort="priority", limit=None)
         assert [t.title for t in result] == ["high", "medium", "low"]
 
+    def test_sort_by_created(self, svc: TodoService, frozen_time: Callable[[int], None]) -> None:
+        """Created sort: newest first."""
+        frozen_time(1000)
+        _add_todo(svc, title="first")
+        frozen_time(2000)
+        _add_todo(svc, title="second")
+        result = svc.list_todos(closed=False, project_query=None, priority=None, tag=None, sort="created", limit=None)
+        assert [t.title for t in result] == ["second", "first"]
+
     def test_empty_tag_raises(self, svc: TodoService) -> None:
         """Empty tag string raises VALIDATION_ERROR."""
         with pytest.raises(AppError) as exc_info:
@@ -239,6 +315,24 @@ class TestEditTodo:
             todo_id, title=None, body=None, priority="high", project_query=None, tag=None, add_tag=None, remove_tag=None
         )
         assert svc.get_todo(todo_id).priority == "high"
+
+    def test_edit_body(self, svc: TodoService) -> None:
+        """Body updated successfully."""
+        todo_id = _add_todo(svc, body="old body")
+        svc.edit_todo(
+            todo_id, title=None, body="new body", priority=None, project_query=None, tag=None, add_tag=None, remove_tag=None
+        )
+        assert svc.get_todo(todo_id).body == "new body"
+
+    def test_set_project(self, svc: TodoService) -> None:
+        """Project changed from one to another."""
+        svc.add_project("Alpha")
+        svc.add_project("Beta")
+        todo_id = _add_todo(svc, project_query="Alpha")
+        svc.edit_todo(
+            todo_id, title=None, body=None, priority=None, project_query="Beta", tag=None, add_tag=None, remove_tag=None
+        )
+        assert svc.get_todo(todo_id).project == "Beta"
 
     def test_unset_project(self, svc: TodoService) -> None:
         """Empty string project_query unsets the project."""
@@ -321,13 +415,16 @@ class TestEditTodo:
 class TestCloseTodo:
     """Test closing a todo."""
 
-    def test_close(self, svc: TodoService) -> None:
-        """Open todo becomes closed with closed_at set."""
+    def test_close(self, svc: TodoService, frozen_time: Callable[[int], None]) -> None:
+        """Open todo becomes closed with closed_at and updated_at set."""
+        frozen_time(1000)
         todo_id = _add_todo(svc)
+        frozen_time(2000)
         svc.close_todo(todo_id)
         todo = svc.get_todo(todo_id)
         assert todo.closed is True
-        assert todo.closed_at is not None
+        assert todo.closed_at == 2000
+        assert todo.updated_at == 2000
 
     def test_already_closed(self, svc: TodoService) -> None:
         """Closing an already-closed todo raises ALREADY_CLOSED."""
@@ -350,14 +447,18 @@ class TestCloseTodo:
 class TestReopenTodo:
     """Test reopening a closed todo."""
 
-    def test_reopen(self, svc: TodoService) -> None:
-        """Closed todo becomes open with closed_at cleared."""
+    def test_reopen(self, svc: TodoService, frozen_time: Callable[[int], None]) -> None:
+        """Closed todo becomes open with closed_at cleared and updated_at bumped."""
+        frozen_time(1000)
         todo_id = _add_todo(svc)
+        frozen_time(2000)
         svc.close_todo(todo_id)
+        frozen_time(3000)
         svc.reopen_todo(todo_id)
         todo = svc.get_todo(todo_id)
         assert todo.closed is False
         assert todo.closed_at is None
+        assert todo.updated_at == 3000
 
     def test_already_open(self, svc: TodoService) -> None:
         """Reopening an already-open todo raises ALREADY_OPEN."""

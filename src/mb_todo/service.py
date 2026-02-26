@@ -55,6 +55,38 @@ class TodoService:
         )
         return todo_id, title
 
+    def add_todo_for_projects(
+        self,
+        *,
+        title: str,
+        body: str | None,
+        priority: Priority,
+        project_queries: list[str],
+        tags: list[str] | None,
+    ) -> list[tuple[int, str, str]]:
+        """Create a todo for each specified project. Returns list of (id, title, project).
+
+        Resolves all projects first (fail-fast), deduplicates resolved names.
+        """
+        title = title.strip()
+        if not title:
+            raise AppError("VALIDATION_ERROR", "Title must not be empty.")
+
+        # Resolve all projects before creating any todos
+        resolved = list(dict.fromkeys(self.resolve_project(q) for q in project_queries))
+
+        final_tags = normalize_tags(tags) if tags else []
+        now = int(time.time())
+        tags_json = json.dumps(final_tags)
+
+        results: list[tuple[int, str, str]] = []
+        for project in resolved:
+            todo_id = self._db.insert_todo(
+                title=title, body=body, priority=priority, project=project, tags=tags_json, created_at=now, updated_at=now
+            )
+            results.append((todo_id, title, project))
+        return results
+
     def list_todos(
         self,
         *,

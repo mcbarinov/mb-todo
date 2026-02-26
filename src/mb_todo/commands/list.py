@@ -14,7 +14,7 @@ def list_(
     *,
     closed: Annotated[bool, typer.Option("--closed", help="Show only closed todos.")] = False,
     all_: Annotated[bool, typer.Option("--all", "-a", help="Show all todos (open + closed).")] = False,
-    project: Annotated[str | None, typer.Option("--project", "-p", help="Filter by project.")] = None,
+    project: Annotated[str | None, typer.Option("--project", "-p", help="Filter by project (partial name ok).")] = None,
     priority: Annotated[Priority | None, typer.Option("--priority", "-P", help="Filter by priority.")] = None,
     tag: Annotated[str | None, typer.Option("--tag", "-t", help="Filter by tag.")] = None,
     sort: Annotated[SortOrder, typer.Option("--sort", "-s", help="Sort order (created, priority, updated).")] = "updated",

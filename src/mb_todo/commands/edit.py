@@ -19,7 +19,7 @@ def edit(
     title: Annotated[str | None, typer.Option("--title", help="New title.")] = None,
     body: Annotated[str | None, typer.Option("--body", help="New body.")] = None,
     priority: Annotated[Priority | None, typer.Option("--priority", "-P", help="New priority.")] = None,
-    project: Annotated[str | None, typer.Option("--project", "-p", help="New project (empty string to unset).")] = None,
+    project: Annotated[str | None, typer.Option("--project", "-p", help="New project (partial name ok, empty to unset).")] = None,
     tag: Annotated[list[str] | None, typer.Option("--tag", "-t", help="Replace all tags (repeatable).")] = None,
     add_tag: Annotated[list[str] | None, typer.Option("--add-tag", help="Add tags (repeatable).")] = None,
     remove_tag: Annotated[list[str] | None, typer.Option("--remove-tag", help="Remove tags (repeatable).")] = None,

@@ -80,6 +80,15 @@ class Output:
         """Print success message for todo creation."""
         self._success({"id": todo_id, "title": title}, f"Todo #{todo_id} created: {title}")
 
+    def print_todos_added(self, results: list[tuple[int, str, str]]) -> None:
+        """Print success message for multiple todo creation. Each tuple is (id, title, project)."""
+        if self._json_mode:
+            data = [{"id": r[0], "title": r[1], "project": r[2]} for r in results]
+            print(json.dumps({"ok": True, "data": data}))
+        else:
+            for todo_id, title, project in results:
+                print(f"Todo #{todo_id} created: {title} ({project})")
+
     # --- Projects ---
 
     def print_project_added(self, name: str) -> None:
