@@ -1,5 +1,6 @@
 """Project management commands."""
 
+import logging
 from typing import Annotated
 
 import typer
@@ -7,6 +8,8 @@ from mm_clikit import TyperPlus
 
 from mb_todo.app_context import use_context
 from mb_todo.errors import AppError
+
+logger = logging.getLogger(__name__)
 
 project_app = TyperPlus()
 
@@ -27,3 +30,24 @@ def list_(ctx: typer.Context) -> None:
     """List all projects."""
     app = use_context(ctx)
     app.out.print_projects(app.service.list_projects())
+
+
+@project_app.command(name="delete")
+def delete(
+    ctx: typer.Context,
+    name: Annotated[str, typer.Argument(help="Project name (exact match).")],
+    *,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation prompt.")] = False,
+    with_todos: Annotated[bool, typer.Option("--with-todos", help="Also delete all todos assigned to this project.")] = False,
+) -> None:
+    """Delete a project."""
+    app = use_context(ctx)
+    if not yes and not app.out.json_mode:
+        msg = f"Delete project '{name}' and all its todos?" if with_todos else f"Delete project '{name}'?"
+        typer.confirm(msg, abort=True)
+    try:
+        deleted_todos = app.service.delete_project(name, with_todos=with_todos)
+    except AppError as e:
+        app.out.print_error_and_exit(e.code, e.message)
+    app.out.print_project_deleted(name, deleted_todos)
+    logger.info("Project deleted name=%r deleted_todos=%d", name, deleted_todos)

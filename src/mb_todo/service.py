@@ -202,6 +202,30 @@ class TodoService:
         """Return all project names."""
         return self._db.fetch_projects()
 
+    def delete_project(self, name: str, *, with_todos: bool = False) -> int:
+        """Delete a project by exact name. Returns count of deleted todos.
+
+        Requires exact name match (no partial matching — destructive operation).
+        If with_todos is True, deletes all assigned todos first.
+        """
+        name = name.strip()
+        if not name:
+            raise AppError("VALIDATION_ERROR", "Project name must not be empty.")
+        if name not in self._db.fetch_projects():
+            raise AppError("PROJECT_NOT_FOUND", f"Project '{name}' does not exist.")
+
+        deleted_todos = 0
+        if with_todos:
+            deleted_todos = self._db.delete_todos_by_project(name)
+        elif self._db.project_has_todos(name):
+            raise AppError(
+                "PROJECT_HAS_TODOS",
+                f"Cannot delete '{name}': project has assigned todos. Reassign or delete them first, or use --with-todos.",
+            )
+
+        self._db.delete_project(name)
+        return deleted_todos
+
     def resolve_project(self, query: str) -> str:
         """Resolve a partial project name (case-insensitive substring) to an exact match.
 

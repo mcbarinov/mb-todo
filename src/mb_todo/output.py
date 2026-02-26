@@ -95,6 +95,11 @@ class Output:
         """Print success message for project creation."""
         self._success({"name": name}, f"Project '{name}' created.")
 
+    def print_project_deleted(self, name: str, deleted_todos: int) -> None:
+        """Print success message for project deletion."""
+        suffix = f" ({deleted_todos} todos removed)" if deleted_todos else ""
+        self._success({"name": name, "deleted_todos": deleted_todos}, f"Project '{name}' deleted.{suffix}")
+
     def print_projects(self, projects: list[str]) -> None:
         """Print project list."""
         self._success({"projects": projects}, "\n".join(projects) if projects else "No projects.")

@@ -126,6 +126,23 @@ class Db:
         rows = self._conn.execute("SELECT name FROM projects ORDER BY name").fetchall()
         return [row[0] for row in rows]
 
+    def project_has_todos(self, project: str) -> bool:
+        """Check if any todos are assigned to the given project."""
+        row = self._conn.execute("SELECT EXISTS(SELECT 1 FROM todos WHERE project = ?)", (project,)).fetchone()
+        return bool(row[0])
+
+    def delete_project(self, name: str) -> bool:
+        """Delete a project by name. Returns False if not found. Raises IntegrityError if project has todos."""
+        cursor = self._conn.execute("DELETE FROM projects WHERE name = ?", (name,))
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def delete_todos_by_project(self, project: str) -> int:
+        """Delete all todos assigned to a project. Returns count of deleted rows."""
+        cursor = self._conn.execute("DELETE FROM todos WHERE project = ?", (project,))
+        self._conn.commit()
+        return cursor.rowcount
+
     # --- Todos ---
 
     def insert_todo(
