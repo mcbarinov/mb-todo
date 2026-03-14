@@ -102,9 +102,34 @@ class Output(DualModeOutput):
         """Print success message for todo close."""
         self.output(json_data={"id": todo_id, "title": title}, display_data=f"Closed #{todo_id}: {title}")
 
+    def print_todos_closed(self, results: list[tuple[int, str]], errors: list[tuple[int, str, str]]) -> None:
+        """Print batch close results. Each result is (id, title), each error is (id, code, message)."""
+        self._print_batch("Closed", results, errors)
+
     def print_todo_reopened(self, todo_id: int, title: str) -> None:
         """Print success message for todo reopen."""
         self.output(json_data={"id": todo_id, "title": title}, display_data=f"Reopened #{todo_id}: {title}")
+
+    def print_todos_reopened(self, results: list[tuple[int, str]], errors: list[tuple[int, str, str]]) -> None:
+        """Print batch reopen results. Each result is (id, title), each error is (id, code, message)."""
+        self._print_batch("Reopened", results, errors)
+
+    def print_todos_deleted(self, results: list[tuple[int, str]], errors: list[tuple[int, str, str]]) -> None:
+        """Print batch delete results. Each result is (id, title), each error is (id, code, message)."""
+        self._print_batch("Deleted", results, errors)
+
+    def _print_batch(self, action: str, results: list[tuple[int, str]], errors: list[tuple[int, str, str]]) -> None:
+        """Print batch operation results. Each result is (id, title), each error is (id, code, message)."""
+        json_data: dict[str, object] = {
+            "results": [{"id": r[0], "title": r[1]} for r in results],
+            "errors": [{"id": e[0], "code": e[1], "message": e[2]} for e in errors],
+        }
+        lines: list[str] = []
+        for todo_id, title in results:
+            lines.append(f"{action} #{todo_id}: {title}")
+        for todo_id, code, message in errors:
+            lines.append(f"Error #{todo_id}: [{code}] {message}")
+        self.output(json_data=json_data, display_data="\n".join(lines))
 
     def print_error_and_exit(self, code: str, message: str) -> NoReturn:
         """Print an error in JSON or human-readable format and exit with code 1."""

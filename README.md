@@ -104,17 +104,17 @@ Edit a todo. At least one option is required.
 
 Errors: `NO_CHANGES` if no options provided, `TAG_CONFLICT` if `--tag` used with `--add-tag`/`--remove-tag`.
 
-#### `mb-todo close <id>`
+#### `mb-todo close <id>...`
 
-Close a todo. Sets `closed = 1` and `closed_at` to current timestamp.
+Close one or more todos. Sets `closed = 1` and `closed_at` to current timestamp. Multiple IDs are processed best-effort.
 
-#### `mb-todo reopen <id>`
+#### `mb-todo reopen <id>...`
 
-Reopen a closed todo. Sets `closed = 0` and `closed_at` to null.
+Reopen one or more closed todos. Sets `closed = 0` and `closed_at` to null. Multiple IDs are processed best-effort.
 
-#### `mb-todo delete <id>`
+#### `mb-todo delete <id>...`
 
-Permanently delete a todo. Asks for confirmation before deleting (interactive mode only).
+Permanently delete one or more todos. Asks for confirmation before deleting (interactive mode only). Multiple IDs are processed best-effort.
 
 | Option | Short | Type | Description |
 |--------|-------|------|-------------|
