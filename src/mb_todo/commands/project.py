@@ -32,6 +32,22 @@ def list_(ctx: typer.Context) -> None:
     app.out.print_projects(app.service.list_projects())
 
 
+@project_app.command(aliases=["r"])
+def rename(
+    ctx: typer.Context,
+    old: Annotated[str, typer.Argument(help="Current project name.")],
+    new: Annotated[str, typer.Argument(help="New project name.")],
+) -> None:
+    """Rename a project."""
+    app = use_context(ctx)
+    try:
+        app.service.rename_project(old, new)
+    except AppError as e:
+        app.out.print_error_and_exit(e.code, e.message)
+    app.out.print_project_renamed(old.strip(), new.strip())
+    logger.info("Project renamed old=%r new=%r", old, new)
+
+
 @project_app.command(name="delete")
 def delete(
     ctx: typer.Context,

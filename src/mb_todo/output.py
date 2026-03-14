@@ -63,6 +63,12 @@ class Output(DualModeOutput):
         suffix = f" ({deleted_todos} todos removed)" if deleted_todos else ""
         self.output(json_data={"name": name, "deleted_todos": deleted_todos}, display_data=f"Project '{name}' deleted.{suffix}")
 
+    def print_project_renamed(self, old_name: str, new_name: str) -> None:
+        """Print success message for project rename."""
+        self.output(
+            json_data={"old_name": old_name, "new_name": new_name}, display_data=f"Project '{old_name}' renamed to '{new_name}'."
+        )
+
     def print_projects(self, projects: list[str]) -> None:
         """Print project list."""
         self.output(json_data={"projects": projects}, display_data="\n".join(projects) if projects else "No projects.")

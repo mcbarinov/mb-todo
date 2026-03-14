@@ -137,6 +137,15 @@ class Db:
         self._conn.commit()
         return cursor.rowcount > 0
 
+    def rename_project(self, old_name: str, new_name: str) -> bool:
+        """Rename a project by updating its primary key. CASCADE updates all todo references.
+
+        Returns True if renamed, False if old name not found.
+        """
+        cursor = self._conn.execute("UPDATE projects SET name = ? WHERE name = ?", (new_name, old_name))
+        self._conn.commit()
+        return cursor.rowcount > 0
+
     def delete_todos_by_project(self, project: str) -> int:
         """Delete all todos assigned to a project. Returns count of deleted rows."""
         cursor = self._conn.execute("DELETE FROM todos WHERE project = ?", (project,))

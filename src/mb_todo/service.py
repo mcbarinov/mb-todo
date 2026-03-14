@@ -226,6 +226,22 @@ class TodoService:
         self._db.delete_project(name)
         return deleted_todos
 
+    def rename_project(self, old_name: str, new_name: str) -> None:
+        """Rename a project. All todos are updated automatically (CASCADE)."""
+        old_name = old_name.strip()
+        new_name = new_name.strip()
+        if not old_name:
+            raise AppError("VALIDATION_ERROR", "Old project name must not be empty.")
+        if not new_name:
+            raise AppError("VALIDATION_ERROR", "New project name must not be empty.")
+        if old_name == new_name:
+            raise AppError("VALIDATION_ERROR", "Old and new names are the same.")
+        if old_name not in self._db.fetch_projects():
+            raise AppError("PROJECT_NOT_FOUND", f"Project '{old_name}' does not exist.")
+        if new_name in self._db.fetch_projects():
+            raise AppError("PROJECT_EXISTS", f"Project '{new_name}' already exists.")
+        self._db.rename_project(old_name, new_name)
+
     def resolve_project(self, query: str) -> str:
         """Resolve a partial project name (case-insensitive substring) to an exact match.
 
